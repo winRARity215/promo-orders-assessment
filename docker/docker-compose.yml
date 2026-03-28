@@ -1,0 +1,39 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_DB: promo_orders
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      USE_SQLITE: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../:/app
+    command: ["python", "src/manage.py", "run_in_docker", "python", "src/manage.py", "runserver", "0.0.0.0:8000"]
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: promo_orders
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - promo_orders_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d promo_orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  promo_orders_pgdata:
